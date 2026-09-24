@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev フォーム検証</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #fff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1da;
+    --ok: #1f7a4d; --ok-bg: #e7f4ec; --warn: #9a5b00; --warn-bg: #fdf1dc; --ng: #b3261e; --ng-bg: #fbe9e7;
+    --accent: #2f5bd3;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .samples span { color: var(--muted); font-size: 13px; align-self: center; margin-right: 4px; }
+  .samples button { border: 1px solid var(--line); background: #faf9f6; border-radius: 999px;
+                    padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .samples button:hover { border-color: var(--accent); color: var(--accent); }
+
+  label { display: block; font-weight: 600; font-size: 14px; margin: 14px 0 4px; }
+  input, textarea { width: 100%; font: inherit; padding: 9px 11px; border: 1px solid var(--line);
+                    border-radius: 8px; background: #fff; transition: border-color .15s; }
+  textarea { min-height: 150px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .field.ok input, .field.ok textarea { border-color: #9fd3b6; }
+  .field.warn input, .field.warn textarea { border-color: #f0c47a; }
+  .field.ng input, .field.ng textarea { border-color: #eba39d; }
+
+  .notes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; min-height: 24px; }
+  .tag { font-size: 12.5px; border-radius: 6px; padding: 2px 8px; display: inline-flex; gap: 6px; align-items: baseline; }
+  .tag small { opacity: .7; font-variant-numeric: tabular-nums; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .tag.ng { background: var(--ng-bg); color: var(--ng); }
+  .tag.code { background: #eef0f4; color: #4a5160; }
+
+  .submit { margin-top: 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .submit button { font: inherit; font-weight: 600; padding: 10px 22px; border: 0; border-radius: 8px;
+                   background: var(--accent); color: #fff; cursor: pointer; }
+  .submit button:disabled { background: #b9b8b2; cursor: not-allowed; }
+  .submit .msg { font-size: 14px; }
+
+  .status { border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; font-weight: 600; }
+  .status.idle { background: #f0efea; color: var(--muted); font-weight: 400; }
+  .status.ok { background: var(--ok-bg); color: var(--ok); }
+  .status.warn { background: var(--warn-bg); color: var(--warn); }
+  .status.ng { background: var(--ng-bg); color: var(--ng); }
+  .status ul { margin: 6px 0 0; padding-left: 20px; font-weight: 400; font-size: 14px; }
+
+  .speed { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .speed .ms { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .speed .unit { font-size: 18px; color: var(--muted); }
+  .speed .pending { font-size: 14px; color: var(--accent); visibility: hidden; }
+  .speed .pending.on { visibility: visible; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+
+  h2 { font-size: 14px; margin: 18px 0 6px; color: var(--muted); font-weight: 600; }
+  .log { font: 12.5px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted);
+         max-height: 150px; overflow: auto; }
+  .log div:first-child { color: var(--ink); }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+  pre { background: #1f2227; color: #e6e6e6; border-radius: 8px; padding: 12px; overflow: auto;
+        font-size: 12px; line-height: 1.5; max-height: 320px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>問い合わせフォームのリアルタイム検証</h1>
+  <p class="lead">入力が止まって0.3秒後に、フォーム全体を Jev に渡して判定します。正規表現では書けない「中身」のチェックです。</p>
+
+  <div class="grid">
+    <form class="card" id="form" novalidate>
+      <div class="samples">
+        <span>例文:</span>
+        <button type="button" data-sample="normal">普通の問い合わせ</button>
+        <button type="button" data-sample="sales">営業メール</button>
+        <button type="button" data-sample="angry">怒り</button>
+        <button type="button" data-sample="card">カード番号入り</button>
+        <button type="button" data-sample="vague">内容不足</button>
+        <button type="button" data-sample="mismatch">件名ずれ</button>
+        <button type="button" data-sample="clear">クリア</button>
+      </div>
+
+      <div class="field" data-field="name">
+        <label for="name">お名前</label>
+        <input id="name" name="name" autocomplete="off">
+        <div class="notes"></div>
+      </div>
+      <div class="field" data-field="email">
+        <label for="email">メールアドレス</label>
+        <input id="email" name="email" autocomplete="off">
+        <div class="notes"></div>
+      </div>
+      <div class="field" data-field="subject">
+        <label for="subject">件名</label>
+        <input id="subject" name="subject" autocomplete="off">
+        <div class="notes"></div>
+      </div>
+      <div class="field" data-field="message">
+        <label for="message">お問い合わせ内容</label>
+        <textarea id="message" name="message"></textarea>
+        <div class="notes"></div>
+      </div>
+
+      <div class="submit">
+        <button id="send" type="submit">送信</button>
+        <span class="msg" id="sendMsg"></span>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="status idle" id="status">入力すると、ここに判定が出ます</div>
+      <div class="speed">
+        <span class="ms" id="ms">—</span><span class="unit">ms</span>
+        <span class="pending" id="pending">判定中…</span>
+      </div>
+      <div class="sub" id="sub">入力が止まってから結果が出るまで（ブラウザで計測）</div>
+
+      <h2>リクエスト履歴</h2>
+      <div class="log" id="log"></div>
+
+      <details>
+        <summary>Jev に送った JSON / 返ってきた JSON</summary>
+        <pre id="req"></pre>
+        <pre id="res"></pre>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Jev に聞く質問 ------------------------------------------------------
+// when: その質問を送る条件。空欄について聞いても意味がないので、入力がある欄の質問だけ送る
+const QUESTIONS = {
+  name_ok: {
+    when: f => f.name,
+    q: { type: "noul", instructions: "Is the value of the \"name\" field a plausible real person's name? Placeholders like 'test' or 'aaa', random keystrokes, slogans, or sentences are not names." },
+  },
+  kind: {
+    when: f => f.message,
+    q: {
+      type: "choice",
+      instructions: "What kind of submission is this contact form message?",
+      criteria: {
+        inquiry: "A genuine question, request, complaint, or report from a customer or user",
+        sales: "Unsolicited sales pitch, advertising, SEO service, or partnership solicitation",
+        spam: "Spam, scam, gibberish, or a message that is mostly links",
+        prank: "Test input, a joke, or a meaningless message not intended as a real inquiry",
+      },
+    },
+  },
+  abusive: {
+    when: f => f.message,
+    q: { type: "noul", instructions: "Does the message contain insults, harassment, threats, or hostile language toward the staff or company?" },
+  },
+  secret: {
+    when: f => f.message || f.subject,
+    q: { type: "noul", instructions: "Does the form contain secrets that must never be sent through a contact form, such as a full credit card number, a password, a PIN, or bank login details?" },
+  },
+  vague: {
+    when: f => f.message,
+    q: { type: "noul", instructions: "Would support staff need to ask the customer follow-up questions just to understand what the message is about?" },
+  },
+  subject_match: {
+    when: f => f.subject && f.message,
+    q: { type: "noul", instructions: "Does the subject line accurately reflect what the message body is about?" },
+  },
+};
+
+const KIND_LABEL = { inquiry: "問い合わせ", sales: "営業・宣伝", spam: "スパム", prank: "いたずら・テスト" };
+
+// ---- Jev を呼ぶ（server.rb 経由） ------------------------------------------
+async function askJev(state, questions) {
+  const res = await fetch("/jev", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state, questions }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || res.status);
+  return { json, jevMs: Number(res.headers.get("x-jev-ms")) };
+}
+
+// ---- 入力のたびに判定する -------------------------------------------------
+const $ = id => document.getElementById(id);
+const form = $("form");
+const readForm = () => Object.fromEntries(["name", "email", "subject", "message"].map(k => [k, $(k).value.trim()]));
+
+let timer, seq = 0, reqCount = 0, lastVerdict = null;
+
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(check, 300); // 入力が止まって0.3秒後に判定
+  $("sendMsg").textContent = "";
+}
+form.addEventListener("input", e => { if (!e.isComposing) schedule(); }); // 日本語の変換中は判定しない
+form.addEventListener("compositionend", schedule); // 変換を確定したら判定
+
+async function check() {
+  const f = readForm();
+  const questions = Object.fromEntries(
+    Object.entries(QUESTIONS).filter(([, d]) => d.when(f)).map(([k, d]) => [k, d.q]));
+
+  renderEmail(f.email); // メール形式は正規表現で十分なので Jev には聞かない
+  if (Object.keys(questions).length === 0) return render(f, {});
+
+  const my = ++seq;
+  $("pending").classList.add("on");
+  const t0 = performance.now();
+  try {
+    const { json, jevMs } = await askJev(f, questions);
+    if (my !== seq) return; // 後から出したリクエストの結果を優先する
+    const ms = Math.round(performance.now() - t0);
+    $("ms").textContent = ms;
+    $("sub").textContent = `${Object.keys(questions).length}問を1回で判定（うち Jev ${jevMs} ms）`;
+    logLine(`#${++reqCount}  ${Object.keys(questions).length}問  ${ms} ms`);
+    $("req").textContent = JSON.stringify({ state: f, questions }, null, 2);
+    $("res").textContent = JSON.stringify(json, null, 2);
+    render(f, json.answers);
+  } catch (e) {
+    logLine(`エラー: ${e.message}`);
+  } finally {
+    if (my === seq) $("pending").classList.remove("on");
+  }
+}
+
+// ---- 結果の表示 ------------------------------------------------------------
+const tag = (cls, text, p) => `<span class="tag ${cls}">${text}${p != null ? ` <small>${p.toFixed(2)}</small>` : ""}</span>`;
+
+function setField(name, level, html) {
+  const el = document.querySelector(`[data-field="${name}"]`);
+  el.classList.remove("ok", "warn", "ng");
+  if (level) el.classList.add(level);
+  el.querySelector(".notes").innerHTML = html;
+}
+
+const emailOk = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+function renderEmail(email) {
+  if (!email) return setField("email", null, "");
+  const ok = emailOk(email);
+  setField("email", ok ? "ok" : "warn", tag("code", "コードで判定") + tag(ok ? "ok" : "warn", ok ? "形式OK" : "形式が正しくありません"));
+}
+
+function render(f, a) {
+  const problems = []; // [重さ, 文言]
+  if (f.email && !emailOk(f.email)) problems.push(["warn", "メールアドレスの形式が正しくありません"]);
+
+  // 名前
+  if (a.name_ok) {
+    const ok = a.name_ok.noul >= 0.5;
+    setField("name", ok ? "ok" : "warn", tag(ok ? "ok" : "warn", ok ? "名前として自然" : "名前ではなさそう", a.name_ok.noul));
+    if (!ok) problems.push(["warn", "お名前が名前らしくありません"]);
+  } else setField("name", null, "");
+
+  // 件名
+  if (a.subject_match) {
+    const ok = a.subject_match.noul >= 0.5;
+    setField("subject", ok ? "ok" : "warn", tag(ok ? "ok" : "warn", ok ? "本文と合っている" : "本文とずれている", a.subject_match.noul));
+    if (!ok) problems.push(["warn", "件名が本文の内容と合っていません"]);
+  } else setField("subject", null, "");
+
+  // 本文
+  if (a.kind) {
+    const k = a.kind.choice, notes = [];
+    const kindLevel = k === "inquiry" ? "ok" : k === "sales" ? "warn" : "ng";
+    notes.push(tag(kindLevel, KIND_LABEL[k], a.kind.confidence));
+    if (k === "sales") problems.push(["warn", "営業・宣伝のようです（営業窓口へ回します）"]);
+    if (k === "spam" || k === "prank") problems.push(["ng", `${KIND_LABEL[k]}と判定されました`]);
+
+    if (a.abusive.noul >= 0.5) { notes.push(tag("warn", "攻撃的な表現", a.abusive.noul)); problems.push(["warn", "攻撃的な表現が含まれています"]); }
+    // 内容の具体性は、本物の問い合わせのときだけ見る（営業メールに「内容不足」と言っても仕方ない）
+    if (k === "inquiry") {
+      if (a.vague.noul >= 0.5) { notes.push(tag("warn", "内容が不足", a.vague.noul)); problems.push(["warn", "何が・いつから・どうしたいかを書くと早く解決できます"]); }
+      else notes.push(tag("ok", "内容は十分"));
+    }
+    if (a.secret.noul >= 0.5) { notes.push(tag("ng", "カード番号・パスワード等", a.secret.noul)); problems.push(["ng", "カード番号やパスワードは送らないでください"]); }
+
+    const worst = problems.some(p => p[0] === "ng") ? "ng" : notes.some(n => n.includes("warn")) ? "warn" : "ok";
+    setField("message", worst, notes.join(""));
+  } else setField("message", null, "");
+
+  // 全体の判定
+  const st = $("status");
+  const blocked = problems.some(p => p[0] === "ng");
+  $("send").disabled = blocked;
+  lastVerdict = { blocked, problems };
+  if (!f.message) {
+    st.className = "status idle"; st.textContent = "お問い合わせ内容を入力してください";
+  } else if (problems.length === 0) {
+    st.className = "status ok"; st.textContent = "✓ 送信できます";
+  } else {
+    st.className = `status ${blocked ? "ng" : "warn"}`;
+    st.innerHTML = (blocked ? "✕ このままでは送信できません" : "△ 送信はできますが、確認してください") +
+      "<ul>" + problems.map(p => `<li>${p[1]}</li>`).join("") + "</ul>";
+  }
+}
+
+function logLine(text) {
+  const d = document.createElement("div");
+  d.textContent = `${new Date().toLocaleTimeString()}  ${text}`;
+  $("log").prepend(d);
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  if (lastVerdict?.blocked) return;
+  $("sendMsg").textContent = "送信しました（デモなので実際には送られません）";
+});
+
+// ---- 例文 ------------------------------------------------------------------
+const SAMPLES = {
+  normal: { name: "山田 花子", email: "hanako@example.com", subject: "請求書の再発行について",
+            message: "8月分の請求書を紛失してしまいました。PDFで再発行していただけますでしょうか。契約番号は A-10234 です。" },
+  sales: { name: "佐藤 一郎", email: "sato@seo-partners.example", subject: "【ご提案】御社サイトの集客を3倍に",
+           message: "突然のご連絡失礼いたします。弊社はSEO対策で導入実績1,000社以上の株式会社〇〇です。現在、無料のサイト診断キャンペーンを実施しております。まずは15分のオンライン面談でご説明させてください。お申し込みはこちら → https://example.com/lp" },
+  angry: { name: "鈴木 健", email: "ken@example.com", subject: "いい加減にしろ",
+           message: "何度問い合わせても返事がない。ふざけてるのか。担当者の名前を出せ。今日中に連絡がなければ訴えるからな。" },
+  card: { name: "田中 美咲", email: "misaki@example.com", subject: "決済ができません",
+          message: "注文の最後で決済エラーになります。カード番号は 4111 1111 1111 1111、有効期限 12/28、裏の番号は 123 です。確認をお願いします。" },
+  vague: { name: "test", email: "test@test", subject: "質問", message: "動きません" },
+  mismatch: { name: "高橋 誠", email: "makoto@example.com", subject: "パスワードを忘れました",
+              message: "来月から料金プランをスタンダードからプロに変更したいのですが、日割りの料金はどのように計算されますか？" },
+  clear: { name: "", email: "", subject: "", message: "" },
+};
+
+document.querySelectorAll("[data-sample]").forEach(b => b.addEventListener("click", () => {
+  Object.entries(SAMPLES[b.dataset.sample]).forEach(([k, v]) => $(k).value = v);
+  $("sendMsg").textContent = "";
+  clearTimeout(timer);
+  check();
+}));
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# APIキーを含むため絶対にコミットしない
+.env
+# 実アカウントのCloudTrail（アカウントID・IPなど）を含む
+data/
+results/
+.DS_Store
