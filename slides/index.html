@@ -116,6 +116,11 @@ table.examples td { white-space: normal; }
 .ng-mark { color: var(--ng); font-weight: 700; }
 .ng-text { color: var(--ng); }
 
+.ok-head { color: var(--ok); }
+.ng-head { color: var(--ng); }
+ul.evidence { gap: .7em; }
+ul.evidence li span { display: block; font-size: .78em; color: var(--muted); line-height: 1.5; }
+
   /* ---- 数字タイル ---- */
   .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 2vw, 32px); }
   @media (max-width: 700px) { .figures { grid-template-columns: 1fr; } }
@@ -206,7 +211,7 @@ table.examples td { white-space: normal; }
       <span>コード <a href="https://github.com/hajime-goshima/jev-lab">github.com/hajime-goshima/jev-lab</a></span>
     </div>
   </div>
-  <div class="slide-foot">01 / 20</div>
+  <div class="slide-foot">01 / 21</div>
 </section>
 
 <!-- ================= Jevとは ================= -->
@@ -236,7 +241,7 @@ table.examples td { white-space: normal; }
     </div>
     <p class="big-q">「文章を読んで、決まった選択肢から選ぶ」ことに特化したモデル。人が数秒で直感的に答えられる判断を、プログラムから大量に速く行えます。</p>
   </div>
-  <div class="slide-foot">02 / 20</div>
+  <div class="slide-foot">02 / 21</div>
 </section>
 
 <section class="slide" id="s3">
@@ -290,7 +295,7 @@ table.examples td { white-space: normal; }
       <li><span class="mono">confidence</span>（確信度）が低いものだけ人に回せる → 実践1で使う</li>
     </ul>
   </div>
-  <div class="slide-foot">03 / 20</div>
+  <div class="slide-foot">03 / 21</div>
 </section>
 
 <section class="slide" id="s3b">
@@ -344,7 +349,7 @@ table.examples td { white-space: normal; }
       <li>細かい強弱が付くので、そのまま並べ替えに使える → 実践2のリスクで使う</li>
     </ul>
   </div>
-  <div class="slide-foot">04 / 20</div>
+  <div class="slide-foot">04 / 21</div>
 </section>
 
 <section class="slide" id="s3c">
@@ -384,7 +389,7 @@ table.examples td { white-space: normal; }
       <li>true / false ではないので、どこで線を引くかはコード側で決める → 実践3の送信ブロックで使う</li>
     </ul>
   </div>
-  <div class="slide-foot">05 / 20</div>
+  <div class="slide-foot">05 / 21</div>
 </section>
 
 <section class="slide" id="s4">
@@ -415,7 +420,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
       </div>
     </div>
   </div>
-  <div class="slide-foot">06 / 20</div>
+  <div class="slide-foot">06 / 21</div>
 </section>
 
 <!-- ================= 実践1 ================= -->
@@ -449,7 +454,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
       </div>
     </div>
   </div>
-  <div class="slide-foot">07 / 20</div>
+  <div class="slide-foot">07 / 21</div>
 </section>
 
 <section class="slide demo" id="s6">
@@ -463,7 +468,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
       <li>正解ラベルと合っていれば ✅、違えば ❌ と想定ラベル</li>
     </ul>
   </div>
-  <div class="slide-foot">08 / 20</div>
+  <div class="slide-foot">08 / 21</div>
 </section>
 
 <section class="slide" id="s7">
@@ -496,7 +501,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
     </div>
     <p class="axis-note">棒はすべて 0〜100% の目盛り。</p>
   </div>
-  <div class="slide-foot">09 / 20</div>
+  <div class="slide-foot">09 / 21</div>
 </section>
 
 <section class="slide" id="s7b">
@@ -517,7 +522,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
     </div>
     <p class="note">遠回しな不満は70件、うち誤り18件。17件が「negative → mixed」で、感謝や丁寧な言葉が添えられていると「良い面もある」と読まれやすい。誤り18件のうち15件は確信度0.95未満で、「0.95未満は人へ」の運用なら人に回る。</p>
   </div>
-  <div class="slide-foot">10 / 20</div>
+  <div class="slide-foot">10 / 21</div>
 </section>
 
 <section class="slide" id="s8">
@@ -545,7 +550,7 @@ a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
     </div>
     <p class="big-q">確信度が「当たっているかどうか」の目安として使える。迷ったものだけ人に回す運用が組める。</p>
   </div>
-  <div class="slide-foot">11 / 20</div>
+  <div class="slide-foot">11 / 21</div>
 </section>
 
 <!-- ================= 実践2 ================= -->
@@ -582,7 +587,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
       </div>
     </div>
   </div>
-  <div class="slide-foot">12 / 20</div>
+  <div class="slide-foot">12 / 21</div>
 </section>
 
 <section class="slide demo" id="s10">
@@ -596,7 +601,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
       <li>最後に「★ 10件 → 上位10件に入ったのは10件」と出る</li>
     </ul>
   </div>
-  <div class="slide-foot">13 / 20</div>
+  <div class="slide-foot">13 / 21</div>
 </section>
 
 <section class="slide" id="s11">
@@ -618,7 +623,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
     </div>
     <p class="note">3回実行（毎回★☆の位置を変える）し、3回とも★が1〜10位、☆が11〜13位。図は3回目の値。</p>
   </div>
-  <div class="slide-foot">14 / 20</div>
+  <div class="slide-foot">14 / 21</div>
 </section>
 
 <section class="slide" id="s12">
@@ -644,7 +649,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
       <li>2.0 で線を引けば★と☆を分けられるが、この13件だけを見て決めた値</li>
     </ul>
   </div>
-  <div class="slide-foot">15 / 20</div>
+  <div class="slide-foot">15 / 21</div>
 </section>
 
 <!-- ================= 実践3 ================= -->
@@ -674,7 +679,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
     </div>
     <p class="note">入力がある欄の質問だけを送る（最大6問を1回で）。メールアドレスの形式は正規表現で十分なので、Jev には聞かない。</p>
   </div>
-  <div class="slide-foot">16 / 20</div>
+  <div class="slide-foot">16 / 21</div>
 </section>
 
 <section class="slide demo" id="s14">
@@ -688,7 +693,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
       <li>手で打つと、打ち終えて一呼吸で判定が出る</li>
     </ul>
   </div>
-  <div class="slide-foot">17 / 20</div>
+  <div class="slide-foot">17 / 21</div>
 </section>
 
 <section class="slide" id="s15">
@@ -710,7 +715,7 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
     </div>
     <p class="note">時間はブラウザで測った往復。中継の分は数 ms で、ほぼすべてが Jev の処理時間。</p>
   </div>
-  <div class="slide-foot">18 / 20</div>
+  <div class="slide-foot">18 / 21</div>
 </section>
 
 <section class="slide" id="s16">
@@ -742,39 +747,72 @@ a = jev.ask(ev, QUESTIONS)["answers"]</pre>
       </div>
     </div>
   </div>
-  <div class="slide-foot">19 / 20</div>
+  <div class="slide-foot">19 / 21</div>
 </section>
 
 <!-- ================= まとめ ================= -->
 <section class="slide" id="s17">
-  <div class="slide-head"><span class="part">まとめ</span><span class="time">35分</span></div>
+  <div class="slide-head"><span class="part">まとめ ／ 得意なこと・苦手なこと</span><span class="time">まとめ</span></div>
   <div class="slide-body">
-    <h2>判定を「処理の途中」に置けるのが Jev</h2>
+    <h2>Jev の得意なこと・苦手なこと</h2>
+    <div class="cols">
+      <div class="panel">
+        <h3 class="ok-head">得意</h3>
+        <ul class="points evidence">
+          <li><strong>決まった選択肢への判定を、速く大量に</strong><span>1件約0.2秒、1000件を22.4秒（実践1）</span></li>
+          <li><strong>文章も JSON も、そのまま読める</strong><span>CloudTrail のログを前処理なしで評価（実践2）</span></li>
+          <li><strong>名前ではなく中身で判断する</strong><span>同じ操作名でも危険／安全で点数が違う（実践2）</span></li>
+          <li><strong>答えに確率・確信度が付く</strong><span>0.95以上だけ自動にすると正解率99.6%（実践1）、しきい値で送信を止める（実践3）</span></li>
+          <li><strong>何問でも1回でまとめて聞ける</strong><span>3つの実践とも、最大6問を1回で</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3 class="ng-head">苦手</h3>
+        <ul class="points evidence">
+          <li><strong>遠回しな表現</strong><span>遠回しな不満の正解率は74.3%（実践1）</span></li>
+          <li><strong>質問の書き方に結果が左右される</strong><span>「足りるか」→「聞き返しが要るか」で結果が変わった（実践3）</span></li>
+          <li><strong>厳密なルール</strong><span>メールの形式や root の判定は、コードのほうが確実（実践2・3）</span></li>
+          <li><strong>文章を書く・要約する、画像や音声を扱う</strong><span>用意された選択肢から選ぶことしかしない</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">データの限界：問い合わせ文は AI が作成、CloudTrail の危険な操作は架空、しきい値は小さなサンプルで決めたもの。</p>
+  </div>
+  <div class="slide-foot">20 / 21</div>
+</section>
+
+<section class="slide" id="s18">
+  <div class="slide-head"><span class="part">まとめ ／ ユースケース</span><span class="time">まとめ</span></div>
+  <div class="slide-body">
+    <h2>いろんな使い道を考えてみてください</h2>
     <div class="cols">
       <div>
-        <h3>3つに共通したコツ</h3>
+        <h3>Jev が合うのは、こんなところ</h3>
         <ul class="points">
-          <li><strong>そのまま渡す</strong>：文章も JSON も、前処理なしで state に</li>
-          <li><strong>まとめて聞く</strong>：単純な質問に分けて、1回で最大6問</li>
-          <li><strong>確率で線を引く</strong>：確信度・しきい値で人に回す／止める</li>
-          <li><strong>コードで書けるものはコードで</strong>：メール形式や root の判定は Jev に聞かない</li>
+          <li>件数が多くて、人が全部は読めない</li>
+          <li>処理の途中に挟むので、数秒は待てない</li>
+          <li>正規表現では書けない「中身」の判定</li>
+          <li>迷ったものは人に回せる</li>
         </ul>
       </div>
       <div>
-        <h3>限界</h3>
+        <h3>たとえば</h3>
         <ul class="points">
-          <li>問い合わせ文は AI が作成、CloudTrail の危険な操作は架空</li>
-          <li>しきい値は小さなサンプルで決めたもの</li>
-          <li>苦手：遠回しな表現（74.3%）、文章の生成、画像</li>
+          <li><strong>AI エージェントの見張り役</strong>：ツールを呼ぶ前に「取り消せない操作か」を判定</li>
+          <li><strong>検索結果の絞り込み</strong>：RAG の候補20件に「質問に答えられるか」を並列で</li>
+          <li><strong>ログ・アラートの振り分け</strong>：「本番に影響があるか」「急ぎか」</li>
+          <li><strong>投稿やチャットの見張り</strong>：送信前に攻撃的な表現や個人情報を止める</li>
+          <li><strong>自由記述の採点</strong>：アンケートやレビューを基準に沿って点数に</li>
         </ul>
       </div>
     </div>
+    <p class="big-q">みなさんの仕事で、毎回人が読んで「選択肢から選んでいる」ものは何ですか？</p>
     <div class="meta" style="font-size:.9em">
       <span>コード <a href="https://github.com/hajime-goshima/jev-lab">github.com/hajime-goshima/jev-lab</a></span>
-      <span class="mono">emotion/ ・ cloudtrail-evaluation/ ・ form-validation/</span>
+      <span class="mono">emotion/ ・ cloudtrail-evaluation/ ・ form-validation/ ・ slides/</span>
     </div>
   </div>
-  <div class="slide-foot">20 / 20</div>
+  <div class="slide-foot">21 / 21</div>
 </section>
 
 <div class="nav" aria-label="スライド移動">
