@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }</style>
+<title>Jevを個人的に試してみた</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+  :root {
+    --paper: #eef1f4;
+    --surface: #ffffff;
+    --ink: #141c26;
+    --muted: #56626e;
+    --line: #d3dae2;
+    --accent: #1f4fd1;
+    --accent-soft: #e3e9fb;
+    --code-bg: #141c26;
+    --code-ink: #e3e8ef;
+    --code-dim: #8b97a5;
+    --code-key: #9fb6ff;
+    --code-hit: #ffd479;
+    --ok: #1b7f4b;
+    --ok-soft: #e2f3ea;
+    --warn: #a86507;
+    --warn-soft: #fbefd9;
+    --ng: #c0362c;
+    --ng-soft: #fbe6e3;
+    --display: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0e131a; --surface: #161d27; --ink: #e5eaf0; --muted: #9aa6b3; --line: #2a3441;
+      --accent: #86a2ff; --accent-soft: #1d2a4d; --code-bg: #0a0e13; --code-ink: #e3e8ef; --code-dim: #7d8997; --code-key: #9fb6ff;
+      --ok: #4cc38a; --ok-soft: #15301f; --warn: #f0b24a; --warn-soft: #36290f; --ng: #ff7a6e; --ng-soft: #3a1b18;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0e131a; --surface: #161d27; --ink: #e5eaf0; --muted: #9aa6b3; --line: #2a3441;
+    --accent: #86a2ff; --accent-soft: #1d2a4d; --code-bg: #0a0e13; --code-ink: #e3e8ef; --code-dim: #7d8997; --code-key: #9fb6ff;
+    --ok: #4cc38a; --ok-soft: #15301f; --warn: #f0b24a; --warn-soft: #36290f; --ng: #ff7a6e; --ng-soft: #3a1b18;
+  }
+
+  html { scroll-snap-type: y proximity; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--body); font-size: clamp(16px, 1.45vw, 23px); line-height: 1.7;
+    padding-inline: clamp(16px, 5vw, 88px);
+  }
+  * { box-sizing: border-box; }
+
+  /* ---- スライド ---- */
+  .slide {
+    min-height: 100svh; scroll-snap-align: start;
+    display: grid; grid-template-rows: auto 1fr auto; gap: clamp(16px, 2.4vh, 32px);
+    padding-block: clamp(28px, 5vh, 64px);
+    border-bottom: 1px solid var(--line);
+    max-width: 1500px; margin-inline: auto;
+  }
+  .slide-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+                font-size: .72em; color: var(--muted); letter-spacing: .06em; }
+  .part { font-weight: 700; color: var(--accent); }
+  .time { font-family: var(--mono); border: 1px solid var(--line); border-radius: 999px; padding: 1px 12px; }
+  .slide-body { display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 3vh, 36px); min-width: 0; }
+  .slide-foot { font-family: var(--mono); font-size: .65em; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  h1, h2 { font-family: var(--display); font-weight: 900; line-height: 1.25; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+  h1 { font-size: clamp(34px, 5.2vw, 84px); }
+  h2 { font-size: clamp(26px, 3.1vw, 50px); }
+  h3 { font-family: var(--display); font-weight: 700; font-size: 1.05em; margin: 0 0 .4em; }
+  p { margin: 0; max-width: 42em; }
+  .lead { font-size: 1.15em; color: var(--muted); }
+  .mono { font-family: var(--mono); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  ul.points { margin: 0; padding-left: 1.2em; display: grid; gap: .45em; }
+  ul.points li::marker { color: var(--accent); }
+  strong { font-weight: 700; }
+  .accent { color: var(--accent); }
+
+  .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 3vw, 56px); align-items: start; }
+  .cols.wide-left { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  @media (max-width: 860px) { .cols, .cols.wide-left { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: clamp(14px, 1.6vw, 26px); min-width: 0; }
+
+  /* ---- コード ---- */
+  pre.code {
+    margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+    padding: clamp(14px, 1.6vw, 24px); font-family: var(--mono); font-size: .72em; line-height: 1.6;
+    overflow-x: auto;
+  }
+  pre.code .c { color: var(--code-dim); }
+  pre.code .k { color: var(--code-key); }
+  pre.code .a { color: var(--code-hit); font-weight: 600; }
+  .code-label { font-size: .7em; color: var(--muted); margin-bottom: 6px; font-family: var(--mono); }
+
+  /* ---- 表 ---- */
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .85em; }
+  th, td { text-align: left; padding: .5em .8em; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .82em; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+  td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tr.hl td { background: var(--accent-soft); }
+
+table.examples { font-size: .74em; }
+table.examples td:nth-child(2) { line-height: 1.6; min-width: 22em; }
+table.examples td { white-space: normal; }
+.ok-mark { color: var(--ok); font-weight: 700; }
+.ng-mark { color: var(--ng); font-weight: 700; }
+.ng-text { color: var(--ng); }
+
+  /* ---- 数字タイル ---- */
+  .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 2vw, 32px); }
+  @media (max-width: 700px) { .figures { grid-template-columns: 1fr; } }
+  .figure .v { font-family: var(--mono); font-weight: 600; font-size: clamp(34px, 4.4vw, 72px); line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .figure .v small { font-size: .42em; color: var(--muted); font-weight: 400; margin-left: .15em; letter-spacing: 0; }
+  .figure .l { font-size: .8em; color: var(--muted); }
+
+  /* ---- 棒グラフ ---- */
+  .bars { display: grid; gap: .55em; }
+  .bar { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 4.2em; gap: .8em; align-items: center; font-size: .82em; }
+  .bar .track { height: .9em; background: var(--paper); border-radius: 3px; overflow: hidden; }
+  .bar .fill { height: 100%; background: var(--accent); }
+  .bar.low .fill { background: var(--warn); }
+  .bar .val { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .axis-note { font-size: .68em; color: var(--muted); }
+
+  /* ---- タグ・印 ---- */
+  .tag { display: inline-block; font-size: .78em; border-radius: 5px; padding: .05em .55em; white-space: nowrap; }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); }
+  .tag.ng { background: var(--ng-soft); color: var(--ng); }
+  .star { color: var(--ng); font-weight: 700; }
+  .decoy { color: var(--warn); font-weight: 700; }
+
+  /* ---- 型の表 ---- */
+  td .ja { display: block; font-size: .78em; color: var(--muted); line-height: 1.3; }
+  .types td:first-child { font-family: var(--mono); font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .types .ex { font-family: var(--mono); white-space: nowrap; }
+
+  /* ---- デモ区切り ---- */
+  .demo .slide-body { align-items: flex-start; }
+  .demo-mark { font-family: var(--mono); font-size: .8em; color: var(--accent); letter-spacing: .1em; }
+  .demo-cmd { font-family: var(--mono); font-size: clamp(22px, 2.6vw, 42px); background: var(--code-bg); color: var(--code-ink);
+              padding: .35em .8em; border-radius: 10px; max-width: 100%; overflow-x: auto; }
+  .demo-cmd::before { content: "$ "; color: var(--code-dim); }
+  .watch { display: grid; gap: .6em; margin: 0; padding: 0; list-style: none; font-size: 1.1em; }
+  .watch li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr); align-items: baseline; }
+  .watch li::before { content: "▸"; color: var(--accent); }
+
+  /* ---- 構成図 ---- */
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+  .flow .node { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .8em 1em; flex: 1 1 12em; min-width: 0; }
+  .flow .node b { display: block; font-family: var(--mono); font-size: .9em; }
+  .flow .node span { font-size: .75em; color: var(--muted); display: block; }
+  .flow .arrow { align-self: center; padding: 0 .6em; color: var(--muted); font-family: var(--mono); font-size: .75em; text-align: center; }
+  @media (max-width: 700px) { .flow { flex-direction: column; } .flow .arrow { padding: .3em 0; } }
+
+  /* ---- 分布図 ---- */
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--mono); fill: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 1.2em; font-size: .75em; color: var(--muted); }
+  .legend i { display: inline-block; width: .8em; height: .8em; border-radius: 50%; margin-right: .35em; vertical-align: -.05em; }
+
+  /* ---- 表紙 ---- */
+  .agenda { display: grid; gap: 0; max-width: 40em; }
+  .agenda div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1em; padding: .55em 0; border-bottom: 1px solid var(--line); }
+  .agenda div span:last-child { font-family: var(--mono); color: var(--muted); }
+  .meta { font-size: .78em; color: var(--muted); display: flex; flex-wrap: wrap; gap: .4em 1.6em; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .note { font-size: .72em; color: var(--muted); }
+  .big-q { font-size: 1.05em; border-left: 3px solid var(--accent); padding-left: .9em; }
+
+  /* ---- ナビ ---- */
+  .nav { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 6px; z-index: 5; }
+  .nav button { font: 600 14px/1 var(--mono); width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line);
+                background: var(--surface); color: var(--ink); cursor: pointer; opacity: .75; }
+  .nav button:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<!-- ================= 表紙 ================= -->
+<section class="slide" id="s1">
+  <div class="slide-head"><span>TypeSafe AI / Jev</span><span class="time">35分</span></div>
+  <div class="slide-body">
+    <h1>Jev を Ruby で<br>個人的に試してみた</h1>
+    <p class="lead">文章を書かず、判定だけを約0.2秒で返すモデル。問い合わせ、AWSの操作ログ、入力フォームで試した結果です。</p>
+    <div class="agenda">
+      <div><span>Jev とは</span><span>5分</span></div>
+      <div><span>実践1　問い合わせの感情分析</span><span>10分</span></div>
+      <div><span>実践2　CloudTrail のリスク評価</span><span>10分</span></div>
+      <div><span>実践3　フォーム入力のリアルタイム検証</span><span>10分</span></div>
+    </div>
+    <div class="meta">
+      <span>モデル <span class="mono">jev-1.13.0</span></span>
+      <span>2026年9月</span>
+      <span>コード <a href="https://github.com/hajime-goshima/jev-lab">github.com/hajime-goshima/jev-lab</a></span>
+    </div>
+  </div>
+  <div class="slide-foot">01 / 20</div>
+</section>
+
+<!-- ================= Jevとは ================= -->
+<section class="slide" id="s2">
+  <div class="slide-head"><span class="part">Jev とは</span><span class="time">5分</span></div>
+  <div class="slide-body">
+    <h2>LLM は文章を書く。Jev は判定だけをする。</h2>
+    <div class="cols">
+      <div class="panel">
+        <h3>LLM に判定させると</h3>
+        <ul class="points">
+          <li>答えを文章で生成する</li>
+          <li>JSON で返させても、形が崩れることがある</li>
+          <li>パースと検証のコードが要る</li>
+          <li>1件に数秒かかることも多い</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Jev（System One モデル）</h3>
+        <ul class="points">
+          <li>型を決めた質問に、決まった型で答える</li>
+          <li>答えと一緒に<strong>確率・確信度</strong>が返る</li>
+          <li>そのままコードで使える</li>
+          <li>1件<strong class="accent">約0.2秒</strong></li>
+        </ul>
+      </div>
+    </div>
+    <p class="big-q">「文章を読んで、決まった選択肢から選ぶ」ことに特化したモデル。人が数秒で直感的に答えられる判断を、プログラムから大量に速く行えます。</p>
+  </div>
+  <div class="slide-foot">02 / 20</div>
+</section>
+
+<section class="slide" id="s3">
+  <div class="slide-head"><span class="part">Jev とは ／ 質問の型 1/3</span><span class="time">5分</span></div>
+  <div class="slide-body">
+    <h2>Choice：選択肢から1つ選ぶ</h2>
+    <div class="cols">
+      <div>
+        <div class="code-label">リクエスト　POST /v1/systemone</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-latest",
+  <span class="k">"state"</span>: "3回目の問い合わせです。
+            いつになったら返金されるんですか？",
+  <span class="k">"questions"</span>: {
+    <span class="k">"sentiment"</span>: {  <span class="c">// 感情の向き</span>
+      "type": <span class="a">"choice"</span>,
+      "instructions": <span class="a">"この問い合わせで、客は
+                       会社をどう感じているか？"</span>,
+      "criteria": {
+        "positive": "満足",
+        "neutral":  "事務的",
+        "negative": "不満",
+        "mixed":    "両方"
+      }
+    }
+  }
+}</pre>
+      </div>
+      <div>
+        <div class="code-label">レスポンス</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-1.13.0",
+  <span class="k">"answers"</span>: {
+    <span class="k">"sentiment"</span>: {  <span class="c">// 感情の向き</span>
+      "type": "choice",
+      "choice": <span class="a">"negative"</span>,
+      "confidence": <span class="a">1.0</span>,
+      "probabilities": {
+        "negative": 1.0,
+        "mixed":    0.0,
+        "positive": 0.0,
+        "neutral":  0.0
+      }
+    }
+  }
+}</pre>
+      </div>
+    </div>
+    <ul class="points">
+      <li><span class="mono">instructions</span> で何について判定するかを書き、<span class="mono">criteria</span> に「ラベル: 説明」を並べる。返るのは選んだラベルと、ラベルごとの確率</li>
+      <li><span class="mono">confidence</span>（確信度）が低いものだけ人に回せる → 実践1で使う</li>
+    </ul>
+  </div>
+  <div class="slide-foot">03 / 20</div>
+</section>
+
+<section class="slide" id="s3b">
+  <div class="slide-head"><span class="part">Jev とは ／ 質問の型 2/3</span><span class="time">5分</span></div>
+  <div class="slide-body">
+    <h2>Score：基準に沿って0〜Nで採点する</h2>
+    <div class="cols">
+      <div>
+        <div class="code-label">リクエスト　POST /v1/systemone</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-latest",
+  <span class="k">"state"</span>: "3回目の問い合わせです。
+            いつになったら返金されるんですか？",
+  <span class="k">"questions"</span>: {
+    <span class="k">"anger"</span>: {  <span class="c">// 怒りの強さ</span>
+      "type": <span class="a">"score"</span>,
+      "instructions": <span class="a">"客は会社にどのくらい
+                       怒っているか？"</span>,
+      "criteria": [
+        "怒っていない",   <span class="c">// 0</span>
+        "やや不満",       <span class="c">// 1</span>
+        "苛立ち",         <span class="c">// 2</span>
+        "激怒"            <span class="c">// 3</span>
+      ]
+    }
+  }
+}</pre>
+      </div>
+      <div>
+        <div class="code-label">レスポンス</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-1.13.0",
+  <span class="k">"answers"</span>: {
+    <span class="k">"anger"</span>: {  <span class="c">// 怒りの強さ</span>
+      "type": "score",
+      "score": <span class="a">2.01</span>,
+      "confidence": 0.94,
+      "legend": { "0": "怒っていない", "1": "やや不満",
+                  "2": "苛立ち",       "3": "激怒" },
+      "probabilities": {
+        "0": 0.0, "1": 0.03,
+        "2": <span class="a">0.93</span>, "3": 0.04
+      }
+    }
+  }
+}</pre>
+      </div>
+    </div>
+    <ul class="points">
+      <li><span class="mono">criteria</span> は0点から順に並べた基準の配列。<span class="mono">score</span> は確率で重み付けした期待値なので、2.01 のような小数になる</li>
+      <li>細かい強弱が付くので、そのまま並べ替えに使える → 実践2のリスクで使う</li>
+    </ul>
+  </div>
+  <div class="slide-foot">04 / 20</div>
+</section>
+
+<section class="slide" id="s3c">
+  <div class="slide-head"><span class="part">Jev とは ／ 質問の型 3/3</span><span class="time">5分</span></div>
+  <div class="slide-body">
+    <h2>Noul：はい／いいえを確率で答える</h2>
+    <div class="cols">
+      <div>
+        <div class="code-label">リクエスト　POST /v1/systemone</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-latest",
+  <span class="k">"state"</span>: "3回目の問い合わせです。
+            いつになったら返金されるんですか？",
+  <span class="k">"questions"</span>: {
+    <span class="k">"urgent"</span>: {  <span class="c">// 急ぎか</span>
+      "type": <span class="a">"noul"</span>,
+      "instructions": <span class="a">"急ぎの対応が必要か？"</span>
+    }
+  }
+}</pre>
+      </div>
+      <div>
+        <div class="code-label">レスポンス</div>
+<pre class="code">{
+  <span class="k">"model"</span>: "jev-1.13.0",
+  <span class="k">"answers"</span>: {
+    <span class="k">"urgent"</span>: {  <span class="c">// 急ぎか</span>
+      "type": "noul",
+      "noul": <span class="a">0.89</span>
+    }
+  }
+}</pre>
+      </div>
+    </div>
+    <ul class="points">
+      <li>返るのは「はい」である確率 0〜1 だけ。<span class="mono">instructions</span> に質問文を書く（はい／いいえそれぞれの説明を <span class="mono">criteria</span> で足すこともできる）</li>
+      <li>true / false ではないので、どこで線を引くかはコード側で決める → 実践3の送信ブロックで使う</li>
+    </ul>
+  </div>
+  <div class="slide-foot">05 / 20</div>
+</section>
+
+<section class="slide" id="s4">
+  <div class="slide-head"><span class="part">Jev とは ／ 特徴とコード</span><span class="time">5分</span></div>
+  <div class="slide-body">
+    <h2>HTTP で JSON を1回送るだけ</h2>
+    <div class="cols">
+      <ul class="points">
+        <li>質問に名前を付けて、何問でも<strong>1回のリクエストにまとめる</strong>（前の3枚も、実際は3問を1回で送ったもの）</li>
+        <li>入力は文字列でも <strong>JSON でもそのまま</strong>渡せる（画像・音声は未対応）</li>
+        <li>応答は1件<strong>約0.2秒</strong></li>
+        <li>向かないこと：文章を書く、画像を見る、正規表現やコードで書ける厳密なルール</li>
+      </ul>
+      <div>
+        <div class="code-label">jev.rb（標準ライブラリだけ）</div>
+<pre class="code"><span class="k">def</span> ask(state, questions)
+  req = Net::HTTP::Post.new(URL,
+    "Authorization" =&gt; "Bearer #{@key}",
+    "Content-Type"  =&gt; "application/json")
+  req.body = { model: "jev-latest",
+               state:, questions: }.to_json
+  JSON.parse(@http.request(req).body)
+<span class="k">end</span>
+
+<span class="c"># 使う側</span>
+a = jev.ask(text, QUESTIONS)["answers"]
+a["sentiment"]["choice"]  <span class="c"># =&gt; "negative"</span></pre>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">06 / 20</div>
+</section>
+
+<!-- ================= 実践1 ================= -->
+<section class="slide" id="s5">
+  <div class="slide-head"><span class="part">実践1　問い合わせの感情分析</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>問い合わせ1000件の感情を、1件ずつ判定する</h2>
+    <div class="cols">
+      <div>
+        <h3>データ</h3>
+        <ul class="points">
+          <li>日本語の問い合わせ <span class="num">1000</span> 件（正解ラベル付き）</li>
+          <li>EC・SaaS・通信・金融・旅行など9業界</li>
+          <li>平均 <span class="num">243</span> 字、最長 <span class="num">1361</span> 字。長文メール、英語混じり、皮肉、遠回しな不満を含む</li>
+          <li>判定が難しい文 <span class="num">225</span> 件</li>
+        </ul>
+        <p class="note" style="margin-top:.8em">文とラベルは AI（Claude）が作成。実際の問い合わせより整っている点に注意。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>質問</th><th>型</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono">sentiment</span><span class="ja">感情の向き</span></td><td>Choice</td><td>positive / neutral / negative / mixed</td></tr>
+            <tr><td><span class="mono">emotion</span><span class="ja">主な感情</span></td><td>Choice</td><td>感謝・喜び・怒り・苛立ち・失望・不安・なし</td></tr>
+            <tr><td><span class="mono">anger</span><span class="ja">怒りの強さ</span></td><td>Score</td><td>怒りの強さ 0〜3</td></tr>
+            <tr><td><span class="mono">urgent</span><span class="ja">急ぎか</span></td><td>Noul</td><td>急ぎか</td></tr>
+            <tr><td><span class="mono">churn_risk</span><span class="ja">解約リスク</span></td><td>Noul</td><td>解約しそうか</td></tr>
+            <tr><td><span class="mono">sarcasm</span><span class="ja">皮肉か</span></td><td>Noul</td><td>皮肉か</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">07 / 20</div>
+</section>
+
+<section class="slide demo" id="s6">
+  <div class="slide-head"><span class="part">実践1　問い合わせの感情分析</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <div class="demo-mark">▶ デモ（映像）</div>
+    <div class="demo-cmd">ruby demo.rb</div>
+    <ul class="watch">
+      <li>1件ごとに判定が出て、横に <span class="mono">&nbsp;⏱ 200 ms&nbsp;</span> 前後の時間が付く</li>
+      <li>6つの質問への答え（感情・怒り・急ぎ・解約・皮肉）が1回で返る</li>
+      <li>正解ラベルと合っていれば ✅、違えば ❌ と想定ラベル</li>
+    </ul>
+  </div>
+  <div class="slide-foot">08 / 20</div>
+</section>
+
+<section class="slide" id="s7">
+  <div class="slide-head"><span class="part">実践1　結果</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <div class="figures">
+      <div class="figure"><div class="v">95.8<small>%</small></div><div class="l">正解率（958 / 1000）<br>普通の文 98.2% ／ 難しい文 87.6%</div></div>
+      <div class="figure"><div class="v">22.4<small>秒</small></div><div class="l">1000件の処理時間<br>10件ずつ並列</div></div>
+      <div class="figure"><div class="v">0.21<small>秒</small></div><div class="l">1件あたりの応答（中央値）<br>最大 0.70 秒</div></div>
+    </div>
+    <div class="cols">
+      <div>
+        <h3>文字数別の正解率</h3>
+        <div class="bars">
+          <div class="bar"><span>〜99字</span><span class="track"><span class="fill" style="display:block;width:98.6%"></span></span><span class="val">98.6%</span></div>
+          <div class="bar"><span>100〜299字</span><span class="track"><span class="fill" style="display:block;width:95.0%"></span></span><span class="val">95.0%</span></div>
+          <div class="bar"><span>300〜799字</span><span class="track"><span class="fill" style="display:block;width:95.2%"></span></span><span class="val">95.2%</span></div>
+          <div class="bar"><span>800字〜</span><span class="track"><span class="fill" style="display:block;width:89.1%"></span></span><span class="val">89.1%</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>文の特徴別の正解率</h3>
+        <div class="bars">
+          <div class="bar"><span>口語・誤字・絵文字</span><span class="track"><span class="fill" style="display:block;width:100%"></span></span><span class="val">100%</span></div>
+          <div class="bar"><span>皮肉</span><span class="track"><span class="fill" style="display:block;width:95.7%"></span></span><span class="val">95.7%</span></div>
+          <div class="bar"><span>慇懃無礼</span><span class="track"><span class="fill" style="display:block;width:90.9%"></span></span><span class="val">90.9%</span></div>
+          <div class="bar low"><span>遠回しな不満</span><span class="track"><span class="fill" style="display:block;width:74.3%"></span></span><span class="val">74.3%</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="axis-note">棒はすべて 0〜100% の目盛り。</p>
+  </div>
+  <div class="slide-foot">09 / 20</div>
+</section>
+
+<section class="slide" id="s7b">
+  <div class="slide-head"><span class="part">実践1　結果 ／ 遠回しな不満</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>遠回しな不満（74.3%）の例</h2>
+    <div class="table-wrap">
+      <table class="examples">
+        <thead><tr><th></th><th>問い合わせ文</th><th>想定</th><th>Jev</th><th class="r">確信度</th></tr></thead>
+        <tbody>
+          <tr><td class="ok-mark">○</td><td>先日はお世話になりました。お部屋から見える「オーシャンビュー」、たしかにビルとビルの隙間から、青いものがほんの少し見えました。せっかくなので、口コミには書かないでおこうと思います。次に泊まる方が、同じ気持ちにならなければいいのですが。</td><td class="mono">negative</td><td class="mono">negative</td><td class="r">0.88</td></tr>
+          <tr><td class="ok-mark">○</td><td>特に急ぎではないのですが、先月の初めから同じ内容で4回お問い合わせしておりますので、そろそろ何らかのご回答をいただけますと大変ありがたく存じます。</td><td class="mono">negative</td><td class="mono">negative</td><td class="r">0.96</td></tr>
+          <tr><td class="ng-mark">×</td><td>ご連絡ありがとうございます。ちなみに参考までにお伝えしておきますと、先週から他社さんのサービスの資料もいくつか取り寄せて、比較を始めております。お返事の内容次第で、判断の材料にさせていただきます。</td><td class="mono">negative</td><td class="mono ng-text">neutral</td><td class="r">0.84</td></tr>
+          <tr><td class="ng-mark">×</td><td>いつも熱心なご指導、ありがとうございます。先生のおかげで、娘はレッスンの前日になると「お腹が痛い」と言うようになりました。練習不足を叱られるのが怖いそうです。音楽を嫌いにならないうちに、少し指導の仕方をご相談できればと思っております。</td><td class="mono">negative</td><td class="mono ng-text">mixed</td><td class="r">0.46</td></tr>
+          <tr><td class="ng-mark">×</td><td>十年以上こちらの銀行を使っています。昔は支店に行けば顔なじみの方がいて、ちょっとした相談にも乗ってもらえたものです。今は何を聞いても「アプリでお願いします」と言われるばかりで、時代なのだろうとは思いますが、少しさみしい気持ちで帰ってきました。</td><td class="mono">negative</td><td class="mono ng-text">mixed</td><td class="r">0.74</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">遠回しな不満は70件、うち誤り18件。17件が「negative → mixed」で、感謝や丁寧な言葉が添えられていると「良い面もある」と読まれやすい。誤り18件のうち15件は確信度0.95未満で、「0.95未満は人へ」の運用なら人に回る。</p>
+  </div>
+  <div class="slide-foot">10 / 20</div>
+</section>
+
+<section class="slide" id="s8">
+  <div class="slide-head"><span class="part">実践1　わかったこと</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>確信度0.95以上だけを自動処理にすると、正解率99.6%</h2>
+    <div class="cols wide-left">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>運用</th><th class="r">人が見る件数</th><th class="r">拾える誤り</th><th class="r">自動処理分の正解率</th></tr></thead>
+          <tbody>
+            <tr><td>すべて自動</td><td class="r">0</td><td class="r">0 / 42</td><td class="r">95.8%</td></tr>
+            <tr><td>確信度 &lt; 0.8 を人へ</td><td class="r">82（8.2%）</td><td class="r">30 / 42</td><td class="r">98.7%</td></tr>
+            <tr class="hl"><td>確信度 &lt; 0.95 を人へ</td><td class="r">172（17.2%）</td><td class="r">39 / 42</td><td class="r">99.6%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>誤り42件の中身</h3>
+        <ul class="points">
+          <li><span class="num">26</span> 件は「想定 negative → 予測 mixed」。「愛着はあるが最近電波が悪い」のように、良い面も実際に書かれている文。ラベルのほうも割れうる</li>
+          <li><span class="num">8</span> 件は「neutral → positive」。ビジネスメールの定型の「ありがとうございました」に引っ張られた</li>
+        </ul>
+      </div>
+    </div>
+    <p class="big-q">確信度が「当たっているかどうか」の目安として使える。迷ったものだけ人に回す運用が組める。</p>
+  </div>
+  <div class="slide-foot">11 / 20</div>
+</section>
+
+<!-- ================= 実践2 ================= -->
+<section class="slide" id="s9">
+  <div class="slide-head"><span class="part">実践2　CloudTrail のリスク評価</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>AWS の操作ログを、加工せずそのまま渡す</h2>
+    <div class="cols">
+      <div>
+        <h3>評価した113件</h3>
+        <ul class="points">
+          <li>実アカウントの CloudTrail <span class="num">100</span> 件（操作名・実行者・エラーが重複しないものを新しい順に）</li>
+          <li><span class="star">★</span> 架空の危険な操作 <span class="num">10</span> 件：CloudTrail停止、GuardDuty削除、S3全公開、SSH全開放、rootのキー作成、MFAなしのrootログイン など</li>
+          <li><span class="decoy">☆</span> 見た目は似ているが安全な操作 <span class="num">3</span> 件：同じ操作名で中身が無害なもの</li>
+        </ul>
+        <p class="note" style="margin-top:.8em">★☆はランダムな位置に混ぜる。架空であることは JSON に書かない（Jev へのヒントになるため）。</p>
+      </div>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>質問</th><th>型</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><span class="mono">risk</span><span class="ja">リスク</span></td><td>Score</td><td>リスク 0（定型の読み取り）〜 3（権限昇格・保護の無効化・公開・破壊）</td></tr>
+              <tr><td><span class="mono">category</span><span class="ja">操作の種類</span></td><td>Choice</td><td>read / change / iam / security_control / exposure / destructive / auth</td></tr>
+              <tr><td><span class="mono">human</span><span class="ja">人の操作か</span></td><td>Noul</td><td>人が直接操作したか</td></tr>
+              <tr><td><span class="mono">weakens</span><span class="ja">守りを弱めるか</span></td><td>Noul</td><td>セキュリティを弱めるか</td></tr>
+              <tr><td><span class="mono">escalation</span><span class="ja">権限昇格か</span></td><td>Noul</td><td>権限昇格に使えるか</td></tr>
+              <tr><td><span class="mono">investigate</span><span class="ja">今日見るべきか</span></td><td>Noul</td><td>今日見るべきか</td></tr>
+            </tbody>
+          </table>
+        </div>
+<pre class="code" style="margin-top:14px"><span class="c"># イベントの Hash をそのまま state に</span>
+a = jev.ask(ev, QUESTIONS)["answers"]</pre>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">12 / 20</div>
+</section>
+
+<section class="slide demo" id="s10">
+  <div class="slide-head"><span class="part">実践2　CloudTrail のリスク評価</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <div class="demo-mark">▶ デモ（映像）</div>
+    <div class="demo-cmd">ruby evaluate.rb --mix</div>
+    <ul class="watch">
+      <li>113件が1件約0.2秒で流れていく。ほとんどが 🟢 の読み取り操作</li>
+      <li>ときどき <span class="star">★</span> の行が 🔴 で現れる</li>
+      <li>最後に「★ 10件 → 上位10件に入ったのは10件」と出る</li>
+    </ul>
+  </div>
+  <div class="slide-foot">13 / 20</div>
+</section>
+
+<section class="slide" id="s11">
+  <div class="slide-head"><span class="part">実践2　結果</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>★10件が1〜10位、☆3件が11〜13位</h2>
+    <div class="panel chart">
+      <div class="legend">
+        <span><i style="background:var(--muted);opacity:.55;border-radius:2px"></i>実データ 100件（0.05刻みの件数）</span>
+        <span><i style="background:var(--warn)"></i>☆ 似ているが安全 3件</span>
+        <span><i style="background:var(--ng)"></i>★ 架空の危険操作 10件</span>
+      </div>
+      <svg id="dist" viewBox="0 0 1000 250" role="img" aria-label="113件のリスクスコアの分布。実データは0から0.35、☆は0.65から1.77、★は2.21から3.00"></svg>
+    </div>
+    <div class="figures">
+      <div class="figure"><div class="v">0.35</div><div class="l">実データ100件の最高スコア</div></div>
+      <div class="figure"><div class="v">10<small>/ 10</small></div><div class="l">「今日見るべき」が付いたのは★だけ</div></div>
+      <div class="figure"><div class="v">216<small>ms</small></div><div class="l">1件あたり（中央値）。113件で約27秒</div></div>
+    </div>
+    <p class="note">3回実行（毎回★☆の位置を変える）し、3回とも★が1〜10位、☆が11〜13位。図は3回目の値。</p>
+  </div>
+  <div class="slide-foot">14 / 20</div>
+</section>
+
+<section class="slide" id="s12">
+  <div class="slide-head"><span class="part">実践2　わかったこと</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>操作名ではなく、中身を見て点数を変えている</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作名</th><th></th><th>中身</th><th class="r">リスク</th></tr></thead>
+        <tbody>
+          <tr><td class="mono" rowspan="2">PutBucketPolicy</td><td class="star">★</td><td>誰でも読めるように公開（Principal: *、GetObject）</td><td class="r">3.00</td></tr>
+          <tr><td class="decoy">☆</td><td>HTTPS 以外の通信を拒否</td><td class="r">1.56</td></tr>
+          <tr><td class="mono" rowspan="2">AuthorizeSecurityGroupIngress</td><td class="star">★</td><td>SSH と MySQL を 0.0.0.0/0 に開放</td><td class="r">2.99</td></tr>
+          <tr><td class="decoy">☆</td><td>社内ネットワーク 10.0.0.0/16 から 443 番だけ許可</td><td class="r">1.77</td></tr>
+          <tr><td class="mono" rowspan="2">ConsoleLogin</td><td class="star">★</td><td>root が MFA なしでログイン</td><td class="r">2.21</td></tr>
+          <tr><td class="decoy">☆</td><td>IAM ユーザーが MFA ありでログイン</td><td class="r">0.65</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="points">
+      <li>実アカウントのログだけでは最高0.35、「今日見るべき」は0件。<strong>「何もない」と言える</strong>ことも大事</li>
+      <li>root を使ったかどうかのように、<strong>コードで確実に書ける判定はコードで</strong>。Jev はコードで書きにくい「中身の意味」に使う</li>
+      <li>2.0 で線を引けば★と☆を分けられるが、この13件だけを見て決めた値</li>
+    </ul>
+  </div>
+  <div class="slide-foot">15 / 20</div>
+</section>
+
+<!-- ================= 実践3 ================= -->
+<section class="slide" id="s13">
+  <div class="slide-head"><span class="part">実践3　フォーム入力のリアルタイム検証</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>入力が止まって0.3秒後に、フォーム全体を判定する</h2>
+    <div class="flow">
+      <div class="node"><b>ブラウザ（JS）</b><span>質問を組み立て、結果で警告・送信ブロック</span></div>
+      <div class="arrow">POST /jev<br>→</div>
+      <div class="node"><b>server.rb</b><span>そのまま中継するだけ（39行）<br>API キーはここにだけ置く</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>Jev API</b><span>ブラウザからの直接呼び出しは不可（CORS）</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>質問</th><th>型</th><th>内容</th><th>結果の使い方</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mono">kind</span><span class="ja">問い合わせの種類</span></td><td>Choice</td><td>問い合わせ／営業・宣伝／スパム／いたずら</td><td>スパム・いたずらは送信不可</td></tr>
+          <tr><td><span class="mono">secret</span><span class="ja">秘密情報</span></td><td>Noul</td><td>カード番号・パスワードを書いていないか</td><td>送信不可</td></tr>
+          <tr><td><span class="mono">abusive</span><span class="ja">攻撃的か</span></td><td>Noul</td><td>攻撃的な表現・脅し</td><td>注意</td></tr>
+          <tr><td><span class="mono">vague</span><span class="ja">曖昧か</span></td><td>Noul</td><td>聞き返さないと何の話か分からないか</td><td>注意</td></tr>
+          <tr><td><span class="mono">name_ok</span><span class="ja">名前らしいか</span></td><td>Noul</td><td>名前らしいか（test、でたらめな文字）</td><td>注意</td></tr>
+          <tr><td><span class="mono">subject_match</span><span class="ja">件名と本文の一致</span></td><td>Noul</td><td>件名が本文と合っているか</td><td>注意</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">入力がある欄の質問だけを送る（最大6問を1回で）。メールアドレスの形式は正規表現で十分なので、Jev には聞かない。</p>
+  </div>
+  <div class="slide-foot">16 / 20</div>
+</section>
+
+<section class="slide demo" id="s14">
+  <div class="slide-head"><span class="part">実践3　フォーム入力のリアルタイム検証</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <div class="demo-mark">▶ デモ（映像）</div>
+    <div class="demo-cmd">ruby server.rb</div>
+    <ul class="watch">
+      <li>例文ボタンを押すたびに、欄ごとの判定と右上のミリ秒が変わる</li>
+      <li>カード番号を書くと、送信ボタンが押せなくなる</li>
+      <li>手で打つと、打ち終えて一呼吸で判定が出る</li>
+    </ul>
+  </div>
+  <div class="slide-foot">17 / 20</div>
+</section>
+
+<section class="slide" id="s15">
+  <div class="slide-head"><span class="part">実践3　結果</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <h2>6つの例文すべてで、ねらいどおりの判定</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>例文</th><th>判定</th><th>送信</th><th class="r">時間</th></tr></thead>
+        <tbody>
+          <tr><td>普通の問い合わせ</td><td><span class="tag ok">問い合わせ 1.00</span> <span class="tag ok">内容は十分</span></td><td>できる</td><td class="r">218 ms</td></tr>
+          <tr><td>営業メール</td><td><span class="tag warn">営業・宣伝 1.00</span></td><td>できる（営業窓口へ）</td><td class="r">230 ms</td></tr>
+          <tr><td>怒り</td><td><span class="tag warn">攻撃的な表現 0.97</span> <span class="tag warn">内容が不足</span></td><td>できる（要確認）</td><td class="r">332 ms</td></tr>
+          <tr><td>カード番号入り</td><td><span class="tag ng">カード番号・パスワード等 0.98</span></td><td><strong>できない</strong></td><td class="r">312 ms</td></tr>
+          <tr><td>内容不足（名前「test」）</td><td><span class="tag warn">名前ではなさそう 0.02</span> <span class="tag warn">内容が不足 0.89</span></td><td>できる（要確認）</td><td class="r">213 ms</td></tr>
+          <tr><td>件名ずれ</td><td><span class="tag warn">本文とずれている 0.02</span></td><td>できる（要確認）</td><td class="r">246 ms</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">時間はブラウザで測った往復。中継の分は数 ms で、ほぼすべてが Jev の処理時間。</p>
+  </div>
+  <div class="slide-foot">18 / 20</div>
+</section>
+
+<section class="slide" id="s16">
+  <div class="slide-head"><span class="part">実践3　わかったこと</span><span class="time">10分</span></div>
+  <div class="slide-body">
+    <div class="cols">
+      <div>
+        <h2 style="margin-bottom:.6em">聞き方で結果が変わる</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>例文</th><th class="r">内容が足りるか？</th><th class="r">聞き返しが要るか？</th></tr></thead>
+            <tbody>
+              <tr><td>普通の問い合わせ</td><td class="r">0.79</td><td class="r">0.08</td></tr>
+              <tr><td>カード番号入り</td><td class="r">0.34 ✕</td><td class="r">0.18</td></tr>
+              <tr><td>件名ずれ</td><td class="r">0.42 ✕</td><td class="r">0.21</td></tr>
+              <tr class="hl"><td>内容不足</td><td class="r">0.04</td><td class="r">0.90</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note" style="margin-top:.6em">「足りるか」では具体的な文まで不足（✕）と出た。「聞き返さないと何の話か分からないか」と聞き直すと、内容不足の文だけが分かれた。</p>
+      </div>
+      <div>
+        <h2 style="margin-bottom:.6em">速さはつなぎ方で決まる</h2>
+        <div class="figures" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="figure"><div class="v">760<small>ms</small></div><div class="l">5秒あけて呼ぶと<br>（毎回つなぎ直し）</div></div>
+          <div class="figure"><div class="v accent">350<small>ms</small></div><div class="l">接続を保つ時間を<br>120秒に延ばすと</div></div>
+        </div>
+        <p class="note" style="margin-top:.8em">Ruby の Net::HTTP は、2秒使わない接続を張り直すのが既定。入力に間があくフォームでは毎回0.4秒ほど余計にかかっていた。サーバーの起動時に接続を張っておき、1回目の約0.8秒も避けた。</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">19 / 20</div>
+</section>
+
+<!-- ================= まとめ ================= -->
+<section class="slide" id="s17">
+  <div class="slide-head"><span class="part">まとめ</span><span class="time">35分</span></div>
+  <div class="slide-body">
+    <h2>判定を「処理の途中」に置けるのが Jev</h2>
+    <div class="cols">
+      <div>
+        <h3>3つに共通したコツ</h3>
+        <ul class="points">
+          <li><strong>そのまま渡す</strong>：文章も JSON も、前処理なしで state に</li>
+          <li><strong>まとめて聞く</strong>：単純な質問に分けて、1回で最大6問</li>
+          <li><strong>確率で線を引く</strong>：確信度・しきい値で人に回す／止める</li>
+          <li><strong>コードで書けるものはコードで</strong>：メール形式や root の判定は Jev に聞かない</li>
+        </ul>
+      </div>
+      <div>
+        <h3>限界</h3>
+        <ul class="points">
+          <li>問い合わせ文は AI が作成、CloudTrail の危険な操作は架空</li>
+          <li>しきい値は小さなサンプルで決めたもの</li>
+          <li>苦手：遠回しな表現（74.3%）、文章の生成、画像</li>
+        </ul>
+      </div>
+    </div>
+    <div class="meta" style="font-size:.9em">
+      <span>コード <a href="https://github.com/hajime-goshima/jev-lab">github.com/hajime-goshima/jev-lab</a></span>
+      <span class="mono">emotion/ ・ cloudtrail-evaluation/ ・ form-validation/</span>
+    </div>
+  </div>
+  <div class="slide-foot">20 / 20</div>
+</section>
+
+<div class="nav" aria-label="スライド移動">
+  <button id="prev" type="button" aria-label="前のスライド">↑</button>
+  <button id="next" type="button" aria-label="次のスライド">↓</button>
+</div>
+
+<script>
+// ---- 分布図（実践2の3回目の実行結果） ----
+(() => {
+  const real = [0.35,0.3,0.26,0.24,0.23,0.19,0.1,0.09,0.08,0.08,0.08,0.07,0.07,0.07,0.06,0.06,0.05,0.04,0.04,0.04,0.04,0.03,0.03,0.03,0.02,0.02,0.02,0.02,0.02,0.02,
+    0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01].concat(Array(56).fill(0));
+  const decoy = [1.77, 1.56, 0.65];
+  const risky = [3.0, 2.99, 2.99, 2.98, 2.97, 2.95, 2.77, 2.5, 2.49, 2.21];
+  const svg = document.getElementById("dist");
+  const L = 40, R = 960, base = 200;
+  const x = v => L + (v / 3) * (R - L);
+  const ns = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; svg.appendChild(e); return e; };
+
+  // 目盛り
+  for (let v = 0; v <= 3.001; v += 0.5) {
+    el("line", { x1: x(v), x2: x(v), y1: 20, y2: base, stroke: "var(--line)", "stroke-width": 1, fill: "none" });
+    el("text", { x: x(v), y: base + 26, "text-anchor": "middle", "font-size": 16 }, v.toFixed(1));
+  }
+  el("line", { x1: L, x2: R, y1: base, y2: base, stroke: "var(--muted)", "stroke-width": 1.5, fill: "none" });
+  el("text", { x: R, y: base + 46, "text-anchor": "end", "font-size": 14 }, "リスクスコア（0〜3）");
+  // 2.0 の線
+  el("line", { x1: x(2), x2: x(2), y1: 20, y2: base, stroke: "var(--accent)", "stroke-width": 1.5, "stroke-dasharray": "5 5", fill: "none" });
+  el("text", { x: x(2) + 8, y: 34, "font-size": 14, fill: "var(--accent)" }, "2.0");
+
+  // 点を重ならないように縦に積む
+  const stack = (vals, color, r, gap, opacity) => {
+    const used = [];
+    vals.slice().sort((a, b) => a - b).forEach(v => {
+      const cx = x(v);
+      let level = 0;
+      while (used.some(u => u.level === level && Math.abs(u.cx - cx) < r * 2 + 1)) level++;
+      used.push({ cx, level });
+      el("circle", { cx, cy: base - r - 2 - level * (r * 2 + gap), r, fill: color, "fill-opacity": opacity });
+    });
+    return used;
+  };
+  // 実データは 0 付近に集中する（56件がちょうど0）ので、0.05刻みの件数の棒で描く
+  const W = 0.05, bins = {};
+  real.forEach(v => { const b = Math.min(Math.floor(v / W + 1e-9), 59); bins[b] = (bins[b] || 0) + 1; });
+  const maxN = Math.max(...Object.values(bins)), H = 150;
+  Object.entries(bins).forEach(([b, n]) => {
+    const h = Math.max(2, (n / maxN) * H);
+    el("rect", { x: x(b * W) + 1, y: base - h, width: x(W) - x(0) - 2, height: h, fill: "var(--muted)", "fill-opacity": 0.55 });
+  });
+  el("text", { x: x(W) + 6, y: base - H + 12, "font-size": 15, fill: "var(--ink)" }, `0〜0.05 に ${maxN}件（最高 ${Math.max(...real)}）`);
+  stack(decoy, "var(--warn)", 8, 2, 1);
+  stack(risky, "var(--ng)", 8, 2, 1);
+})();
+
+// ---- ←→ キーでスライド移動 ----
+(() => {
+  const slides = [...document.querySelectorAll(".slide")];
+  const current = () => {
+    let best = 0, bestDist = Infinity;
+    slides.forEach((s, i) => { const d = Math.abs(s.getBoundingClientRect().top); if (d < bestDist) { bestDist = d; best = i; } });
+    return best;
+  };
+  const go = d => slides[Math.max(0, Math.min(slides.length - 1, current() + d))].scrollIntoView();
+  document.addEventListener("keydown", e => {
+    if (e.target.closest("input, textarea")) return;
+    if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(1); }
+    if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); go(-1); }
+  });
+  document.getElementById("next").addEventListener("click", () => go(1));
+  document.getElementById("prev").addEventListener("click", () => go(-1));
+})();
+</script>
+</body>
+</html>
